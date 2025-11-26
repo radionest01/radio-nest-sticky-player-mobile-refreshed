@@ -29,12 +29,11 @@
       color: var(--text);
       display: flex;
       align-items: center;
-      justify-content: space-between;
       padding: 10px;
       z-index: 9999;
     }
 
-    /* Round play button */
+    /* Play button */
     #play-btn {
       border: 2px solid var(--text);
       color: var(--text);
@@ -48,6 +47,7 @@
       justify-content: center;
       padding: 0;
       line-height: 0;
+      margin-right: 12px; /* spacing between button and text */
     }
     #play-btn svg {
       width: 20px;
@@ -55,15 +55,13 @@
       fill: currentColor;
     }
 
-    /* Song info */
+    /* Metadata text sits right next to button */
     #song-info {
       flex-grow: 1;
-      text-align: center;
       font-size: 14px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-left: 10px;
     }
   </style>
 </head>
