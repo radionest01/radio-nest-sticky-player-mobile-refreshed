@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobile Radio Player</title>
+  <style>
+    body.light {
+      --bg: #fff;
+      --text: #000;
+    }
+    body.dark {
+      --bg: #000;
+      --text: #fff;
+    }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+    }
+
+    /* Sticky bar */
+    #radio-player {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px;
+      z-index: 9999;
+    }
+
+    /* Round play button */
+    #play-btn {
+      border: 2px solid var(--text);
+      color: var(--text);
+      background: transparent;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 0;
+    }
+    #play-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* Song info */
+    #song-info {
+      flex-grow: 1;
+      text-align: center;
+      font-size: 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div id="radio-player">
+    <button id="play-btn" aria-label="Play"></button>
+    <div id="song-info">Loading...</div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const streamUrl = urlParams.get("stream");
+    const metadataUrl = urlParams.get("metadata");
+
+    const audio = new Audio(streamUrl);
+    audio.crossOrigin = "anonymous";
+
+    const playBtn = document.getElementById("play-btn");
+    const songInfo = document.getElementById("song-info");
+
+    let isPlaying = false;
+    let currentSong = "";
+    let lastChangeTime = Date.now();
+    const FALLBACK_TIMEOUT = 600000; // 10 minutes
+
+    // SVG icons
+    const getPlayIcon = () => `
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7-11-7z"></path></svg>
+    `;
+    const getPauseIcon = () => `
+      <svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"></path></svg>
+    `;
+
+    function updatePlayButton() {
+      playBtn.innerHTML = isPlaying ? getPauseIcon() : getPlayIcon();
+      playBtn.setAttribute("aria-label", isPlaying ? "Pause" : "Play");
+    }
+
+    document.body.classList.add("dark");
+    updatePlayButton();
+
+    playBtn.addEventListener("click", () => {
+      if (isPlaying) {
+        audio.pause();
+      } else {
+        audio.play();
+      }
+      isPlaying = !isPlaying;
+      updatePlayButton();
+    });
+
+    function showFallback() {
+      songInfo.textContent = "Radio - On Air";
+    }
+
+    async function fetchMetadata() {
+      if (!metadataUrl) return;
+
+      try {
+        const res = await fetch(metadataUrl, { cache: "no-store" });
+        const text = await res.text();
+        const song = text.trim();
+
+        if (!song) {
+          showFallback();
+          return;
+        }
+
+        if (song !== currentSong) {
+          currentSong = song;
+          lastChangeTime = Date.now();
+          songInfo.textContent = song;
+        } else if (Date.now() - lastChangeTime > FALLBACK_TIMEOUT) {
+          showFallback();
+        }
+      } catch {
+        showFallback();
+      }
+    }
+
+    setInterval(fetchMetadata, 5000);
+    fetchMetadata();
+  </script>
+</body>
+</html>
