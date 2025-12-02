@@ -20,7 +20,7 @@
       width: 100%;
       display: flex;
       align-items: center;
-      padding: 8px 12px;
+      padding: 14px 18px; /* taller padding for more height */
       z-index: 9999;
       border-top: 1px solid #ccc;
       box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
@@ -30,7 +30,7 @@
 
     #play-icon {
       cursor: pointer;
-      margin-right: 10px;
+      margin-right: 14px;
       display: flex;
       align-items: center;
     }
@@ -39,13 +39,13 @@
     #station-text {
       display: flex;
       flex-direction: column;
-      margin-right: 10px;
+      margin-right: 14px;
       text-align: left;
       align-items: flex-start;
       justify-content: center;
     }
     #station-name {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: bold;
     }
 
@@ -53,36 +53,28 @@
       display: flex;
       margin-left: auto;
       align-items: center;
-      padding-right: 8px;
+      padding-right: 12px;
     }
 
     .status-btn {
-      font-size: 6px;       /* reduced size */
-      padding: 1px 3px;     /* reduced padding */
-      border-radius: 8px;
+      font-size: 12px;       /* original size */
+      padding: 2px 6px;      /* original padding */
+      border-radius: 12px;
       background: transparent;
       cursor: pointer;
       transition: box-shadow 0.3s ease;
-      border: 1px solid currentColor; /* thinner border */
+      border: 2px solid currentColor;
+      white-space: nowrap;
     }
-    .status-btn:hover { box-shadow: 0 0 4px currentColor; }
+    .status-btn:hover { box-shadow: 0 0 6px currentColor; }
     .status-btn.pulsing { animation: pulse 2s infinite; }
 
-    #live-badge {
-      display: none;
-      margin-right: 8px;
-      background: red;
-      color: #fff;
-      font-weight: bold;
-      border: 1px solid red; /* thinner border */
-    }
-
-    #powered-by { margin-right: 6px; }
+    #powered-by { margin-right: 10px; }
 
     #theme-toggle {
       cursor: pointer;
-      font-size: 16px; /* slightly smaller icon */
-      margin-left: 6px;
+      font-size: 20px;
+      margin-left: 10px;
     }
 
     @keyframes pulse {
@@ -95,7 +87,7 @@
 <body>
   <div id="radio-player">
     <div id="play-icon">
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="#fff" stroke="#fff" stroke-width="2">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="#fff" stroke="#fff" stroke-width="2">
         <path d="M8 5v14l11-7-11-7z"></path>
       </svg>
     </div>
@@ -103,7 +95,7 @@
       <span id="station-name">My Radio</span>
     </div>
     <div id="right-controls">
-      <span id="live-badge" class="status-btn">Live Now</span>
+      <!-- Live Now removed -->
       <button id="powered-by" class="status-btn" onclick="window.open('https://myradionest.com','_blank')">Powered by Radio Nest</button>
       <span id="theme-toggle">🌞</span>
     </div>
@@ -120,7 +112,6 @@
     audio.crossOrigin = "anonymous";
 
     const playIcon = document.getElementById("play-icon");
-    const liveBadge = document.getElementById("live-badge");
     const poweredBy = document.getElementById("powered-by");
     const themeToggle = document.getElementById("theme-toggle");
     const player = document.getElementById("radio-player");
@@ -129,24 +120,20 @@
     let isDark = true;
 
     const getPlayIcon = (color) => `
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="${color}" stroke="${color}" stroke-width="2">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="${color}" stroke="${color}" stroke-width="2">
         <path d="M8 5v14l11-7-11-7z"></path>
       </svg>`;
     const getPauseIcon = (color) => `
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="${color}" stroke="${color}" stroke-width="2">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="${color}" stroke="${color}" stroke-width="2">
         <path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
       </svg>`;
 
     function updatePlayerState() {
       const color = isDark ? "#fff" : "#000";
       if (isPlaying) {
-        liveBadge.style.display = "inline-block";
-        liveBadge.classList.add("pulsing");
         poweredBy.classList.add("pulsing");
         playIcon.innerHTML = getPauseIcon(color);
       } else {
-        liveBadge.style.display = "none";
-        liveBadge.classList.remove("pulsing");
         poweredBy.classList.remove("pulsing");
         playIcon.innerHTML = getPlayIcon(color);
       }
@@ -170,7 +157,6 @@
         themeToggle.style.color = "#000";
         poweredBy.style.color = "#000";
         poweredBy.style.borderColor = "#000";
-        liveBadge.style.color = "#fff";
       } else {
         player.style.backgroundColor = "#000";
         player.style.color = "#fff";
@@ -178,7 +164,6 @@
         themeToggle.style.color = "#fff";
         poweredBy.style.color = "#fff";
         poweredBy.style.borderColor = "#fff";
-        liveBadge.style.color = "#fff";
       }
       isDark = !isDark;
       updatePlayerState();
