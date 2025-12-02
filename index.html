@@ -5,145 +5,192 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mobile Radio Player</title>
   <style>
-    body.light {
-      --bg: #fff;
-      --text: #000;
-    }
-    body.dark {
-      --bg: #000;
-      --text: #fff;
-    }
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: sans-serif;
+      overflow-x: hidden;
     }
 
-    /* Sticky bar */
     #radio-player {
       position: fixed;
       bottom: 0;
       left: 0;
-      right: 0;
       width: 100%;
-      background: var(--bg);
-      color: var(--text);
       display: flex;
       align-items: center;
-      padding: 10px;
+      padding: 10px 16px;
       z-index: 9999;
+      border-top: 1px solid #ccc;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+      background-color: #000; /* start dark */
+      color: #fff;
     }
 
-    /* Play button */
-    #play-btn {
-      border: 2px solid var(--text);
-      color: var(--text);
-      background: transparent;
-      border-radius: 50%;
-      width: 44px;
-      height: 44px;
+    #play-icon {
       cursor: pointer;
-      display: inline-flex;
+      margin-right: 12px;
+      display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 0;
-      line-height: 0;
-      margin-right: 12px; /* spacing between button and text */
     }
-    #play-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: currentColor;
+    #play-icon svg { vertical-align: middle; }
+
+    #station-text {
+      display: flex;
+      flex-direction: column;
+      margin-right: 12px;
+      text-align: left;
+      align-items: flex-start;
+      justify-content: center;
+    }
+    #station-name {
+      font-size: 14px;
+      font-weight: bold;
     }
 
-    /* Metadata text sits right next to button */
-    #song-info {
-      flex-grow: 1;
-      font-size: 14px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    #right-controls {
+      display: flex;
+      margin-left: auto;
+      align-items: center;
+      padding-right: 12px;
+    }
+
+    .status-btn {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 12px;
+      background: transparent;
+      cursor: pointer;
+      transition: box-shadow 0.3s ease;
+      border: 2px solid currentColor;
+    }
+    .status-btn:hover { box-shadow: 0 0 6px currentColor; }
+    .status-btn.pulsing { animation: pulse 2s infinite; }
+
+    #live-badge {
+      display: none;
+      margin-right: 12px;
+      background: red;
+      color: #fff;
+      font-weight: bold;
+      border: 2.5px solid red;
+    }
+
+    #powered-by { margin-right: 8px; }
+
+    #theme-toggle {
+      cursor: pointer;
+      font-size: 20px;
+      margin-left: 8px;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
     }
   </style>
 </head>
 <body>
   <div id="radio-player">
-    <button id="play-btn" aria-label="Play"></button>
-    <div id="song-info">Loading...</div>
+    <div id="play-icon">
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="#fff" stroke="#fff" stroke-width="2">
+        <path d="M8 5v14l11-7-11-7z"></path>
+      </svg>
+    </div>
+    <div id="station-text">
+      <span id="station-name">My Radio</span>
+    </div>
+    <div id="right-controls">
+      <span id="live-badge" class="status-btn">Live Now</span>
+      <button id="powered-by" class="status-btn" onclick="window.open('https://myradionest.com','_blank')">Powered by Radio Nest</button>
+      <span id="theme-toggle">🌞</span>
+    </div>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const streamUrl = urlParams.get("stream");
-    const metadataUrl = urlParams.get("metadata");
+    const stationNameParam = urlParams.get("name") || "My Radio";
+    const streamUrlParam = urlParams.get("stream") || "https://defaultstream.com/stream";
 
-    const audio = new Audio(streamUrl);
+    document.getElementById("station-name").textContent = stationNameParam;
+
+    const audio = new Audio(streamUrlParam);
     audio.crossOrigin = "anonymous";
 
-    const playBtn = document.getElementById("play-btn");
-    const songInfo = document.getElementById("song-info");
+    const playIcon = document.getElementById("play-icon");
+    const liveBadge = document.getElementById("live-badge");
+    const poweredBy = document.getElementById("powered-by");
+    const themeToggle = document.getElementById("theme-toggle");
+    const player = document.getElementById("radio-player");
 
     let isPlaying = false;
-    let currentSong = "";
-    let lastChangeTime = Date.now();
-    const FALLBACK_TIMEOUT = 600000; // 10 minutes
+    let isDark = true;
 
-    // SVG icons
-    const getPlayIcon = () => `
-      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7-11-7z"></path></svg>
-    `;
-    const getPauseIcon = () => `
-      <svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"></path></svg>
-    `;
+    const getPlayIcon = (color) => `
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="${color}" stroke="${color}" stroke-width="2">
+        <path d="M8 5v14l11-7-11-7z"></path>
+      </svg>`;
+    const getPauseIcon = (color) => `
+      <svg viewBox="0 0 24 24" width="28" height="28" fill="${color}" stroke="${color}" stroke-width="2">
+        <path d="M6 5h4v14H6zM14 5h4v14h-4z"></path>
+      </svg>`;
 
-    function updatePlayButton() {
-      playBtn.innerHTML = isPlaying ? getPauseIcon() : getPlayIcon();
-      playBtn.setAttribute("aria-label", isPlaying ? "Pause" : "Play");
+    function updatePlayerState() {
+      const color = isDark ? "#fff" : "#000";
+      if (isPlaying) {
+        liveBadge.style.display = "inline-block";
+        liveBadge.classList.add("pulsing");
+        poweredBy.classList.add("pulsing");
+        playIcon.innerHTML = getPauseIcon(color);
+      } else {
+        liveBadge.style.display = "none";
+        liveBadge.classList.remove("pulsing");
+        poweredBy.classList.remove("pulsing");
+        playIcon.innerHTML = getPlayIcon(color);
+      }
     }
 
-    document.body.classList.add("dark");
-    updatePlayButton();
-
-    playBtn.addEventListener("click", () => {
+    function togglePlayback() {
       if (isPlaying) {
         audio.pause();
       } else {
         audio.play();
       }
       isPlaying = !isPlaying;
-      updatePlayButton();
-    });
-
-    function showFallback() {
-      songInfo.textContent = "Radio - On Air";
+      updatePlayerState();
     }
 
-    async function fetchMetadata() {
-      if (!metadataUrl) return;
-
-      try {
-        const res = await fetch(metadataUrl, { cache: "no-store" });
-        const text = await res.text();
-        const song = text.trim();
-
-        if (!song) {
-          showFallback();
-          return;
-        }
-
-        if (song !== currentSong) {
-          currentSong = song;
-          lastChangeTime = Date.now();
-          songInfo.textContent = song;
-        } else if (Date.now() - lastChangeTime > FALLBACK_TIMEOUT) {
-          showFallback();
-        }
-      } catch {
-        showFallback();
+    function toggleTheme() {
+      if (isDark) {
+        player.style.backgroundColor = "#fff";
+        player.style.color = "#000";
+        themeToggle.textContent = "🌙";
+        themeToggle.style.color = "#000";
+        poweredBy.style.color = "#000";
+        poweredBy.style.borderColor = "#000";
+        liveBadge.style.color = "#fff";
+      } else {
+        player.style.backgroundColor = "#000";
+        player.style.color = "#fff";
+        themeToggle.textContent = "🌞";
+        themeToggle.style.color = "#fff";
+        poweredBy.style.color = "#fff";
+        poweredBy.style.borderColor = "#fff";
+        liveBadge.style.color = "#fff";
       }
+      isDark = !isDark;
+      updatePlayerState();
     }
 
-    setInterval(fetchMetadata, 5000);
-    fetchMetadata();
+    // Initial state fix
+    themeToggle.style.color = "#fff";
+    poweredBy.style.color = "#fff";
+    poweredBy.style.borderColor = "#fff";
+
+    playIcon.addEventListener("click", togglePlayback);
+    themeToggle.addEventListener("click", toggleTheme);
   </script>
 </body>
 </html>
